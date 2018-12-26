@@ -4,11 +4,11 @@
 #include <mutex>
 #include "state.h"
 
-#define INPUT_NAME "input.txt" //输入文件名
-#define OUTPUT_NAME "output.txt" //输出文件名
 #define N 4 //柜台数
 #define T 1000 //时钟周期
 
+
+int now;
 
 
 void Clock() {
@@ -25,13 +25,11 @@ void start()
 	DWORD *custom_threadID = new DWORD[NUM_CUSTOM];
 	//NUM_DONE   已完成服务的顾客数
 	//NUM_CUSTOM 总顾客数
-	while (NUM_DONE < NUM_CUSTOM)
+	while (now_clone)
 	{
 		int i;
-		for (i = 0; i < NUM_CUSTOM - NUM_DONE; i++)
+		for (i = 0; i < now; i++)
 		{
-			if ((*(customers + i))->Entered())
-			{
 				//got_num表示顾客是否抽到号
 				if (!(*(customers + i))->got_num)//若时间到且该顾客未取号则加入取号线程
 				{
@@ -39,7 +37,6 @@ void start()
 					*(custom_thread + i) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Get_num, *(customers + i), 0, custom_threadID + i);
 					(*(customers + i))->got_num = true;
 				}
-			}
 		}
 	}
 }
@@ -47,13 +44,13 @@ void start()
 HANDLE hMutex = CreateMutex(NULL, FALSE, NULL);
 
 void CustomerComing() {
-	int i = 1;
+	int i = 0;
+	int n = 0;
 	while (NUM_CUSTOM - NUM_DONE < 30) {
-		WaitForSingleObject(hMutex, INFINITE);
-		customers_queue.push(Customer(i++, Time, 3));
+		//WaitForSingleObject(hMutex, INFINITE);
+		customers_queue.push(Customer(i++, Time+(n++), 3));
 		NUM_CUSTOM++;
-		ReleaseMutex(hMutex);
-		Sleep(500);
+		//ReleaseMutex(hMutex);
 	}
 }
 
@@ -62,7 +59,6 @@ void CustomerComing() {
 int main() {
 	HANDLE clock_thread;
 	DWORD clock_threadID;
-
 	//clock_thread是时钟线程
 	clock_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Clock, NULL, 0, &clock_threadID);//开始时钟函数
 
@@ -87,19 +83,19 @@ int main() {
 	}
 
 	while (1) {
-		while (NUM_CUSTOM == 0);
-		int now = NUM_CUSTOM - NUM_DONE;
+		while (NUM_CUSTOM - NUM_DONE == 0);
+		now = NUM_CUSTOM - NUM_DONE;
+		now_clone = now;
 		customers = new Customer*[now];
+		//WaitForSingleObject(hMutex, INFINITE);
 		for (int i = 0; i < now; i++)
 		{
 			//customers每一个地址与队列的地址一一对应
-			WaitForSingleObject(hMutex, INFINITE);
 			*(customers + i) = &customers_queue.front();
 			customers_queue.pop();
-			ReleaseMutex(hMutex);
 		}
+		//ReleaseMutex(hMutex);
 		start();//开始进入顾客
-		Sleep(1000);
 	}
 	system("pause");
 	return 0;

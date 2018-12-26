@@ -30,6 +30,7 @@ void Customer::End_serve() {
 	printf("顾客%d在%d时刻结束了服务.\n", this->customer_num, this->end_time);
 
 	NUM_DONE++;
+	now_clone--;
 	ReleaseSemaphore(this->M_CUSTOM, 1, NULL);//V操作，用户相关数据使用结束，同步结束
 }
 
