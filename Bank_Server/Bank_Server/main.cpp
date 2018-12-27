@@ -47,6 +47,26 @@ void start()
 	}
 }
 
+
+void haha() {
+	std::vector<HANDLE> custom_thread;
+	DWORD *custom_threadID;
+	Customer* a;
+
+	while (1) {
+		while (!customers_queue.empty()) {
+			custom_threadID = new DWORD;
+			a = &customers_queue.front();
+
+			if (a&&a->Entered()) {
+				custom_thread.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Get_num, a, 0, custom_threadID));
+				a->got_num = true;
+				customers_queue.pop();
+			}
+		}
+	}
+}
+
 HANDLE hMutex = CreateMutex(NULL, FALSE, NULL);
 
 void CustomerComing() {
@@ -62,6 +82,9 @@ void CustomerComing() {
 			srand(t);
 			d = random(10);
 			customers_queue.push(Customer(i, t, d));
+			WaitForSingleObject(hMutex, INFINITE);
+			a.push(&customers_queue.back());
+			ReleaseMutex(hMutex);
 			i++;
 			NUM_CUSTOM++;
 			//ReleaseMutex(hMutex);
@@ -94,25 +117,31 @@ int main() {
 		server_thread[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Call_num, *(servers + i), 0, &server_threadID[i]);
 	}
 
-	HANDLE *custom_thread;
-	DWORD *custom_threadID;
-	Customer* a;
+
 
 	HANDLE Come_thread;
 	DWORD Come_threadID;
 	Come_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CustomerComing, NULL, 0, &Come_threadID);//开始时钟函数
 
+
+	std::vector<HANDLE> custom_thread;
+	std::vector<DWORD*> custom_threadID;
+	//Customer* a;
+	int forID = 0;
+	while (a.size() != 10);
 	while (1) {
 		while (!customers_queue.empty()) {
-			custom_thread = new HANDLE;
-			custom_threadID = new DWORD;
-			a = &customers_queue.front();
 			
-			if (a&&a->Entered()) {
-				*custom_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Get_num, a, 0, custom_threadID);
-				a->got_num = true;
+			WaitForSingleObject(hMutex, INFINITE);
+			if (!a.empty()&&a.front()->Entered()) {
+				custom_threadID.push_back(new DWORD);
+				custom_thread.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Get_num, a.front(), 0, custom_threadID[forID]));
+				a.front()->got_num = true;
 				customers_queue.pop();
+				a.pop();
+				forID++;
 			}
+			ReleaseMutex(hMutex);
 		}
 	}
 

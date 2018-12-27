@@ -15,3 +15,4 @@
  std::queue <Customer> customers_queue;
  Customer ** customers;
  std::queue <Customer*> waitlist;
+ std::queue<Customer*> a;

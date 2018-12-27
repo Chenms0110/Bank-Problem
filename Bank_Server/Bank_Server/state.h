@@ -16,3 +16,4 @@ extern HANDLE M_CALL_NUM;//πÒÃ®Ω–∫≈–≈∫≈¡ø
 extern std::queue <Customer> customers_queue;
 extern Customer ** customers;
 extern std::queue <Customer*> waitlist;
+extern std::queue<Customer*> a;
