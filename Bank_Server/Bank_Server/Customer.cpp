@@ -19,7 +19,7 @@ int Customer::Get_serve(int server_num, int start_time) {
 	//在顾客开始接受服务时，记录为他服务的柜台号及开始服务的时间。
 	this->server_num = server_num;
 	this->start_time = start_time;
-	printf("顾客%d在%d时刻被%d号柜台服务.\n", this->customer_num, this->start_time, this->server_num);
+	printf("\t\t\t\t顾客%d在%d时刻被%d号柜台服务.\n", this->customer_num, this->start_time, this->server_num);
 
 	return this->duration_time;
 }
@@ -27,7 +27,7 @@ int Customer::Get_serve(int server_num, int start_time) {
 void Customer::End_serve() {
 	//结束服务时，记录结束服务的时间。
 	this->end_time = Time;
-	printf("顾客%d在%d时刻结束了服务.\n", this->customer_num, this->end_time);
+	printf("\t\t\t\t\t\t\t\t顾客%d在%d时刻结束了服务.\n", this->customer_num, this->end_time);
 
 	NUM_DONE++;
 	now_clone--;

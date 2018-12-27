@@ -1,12 +1,13 @@
 #include "Customer.h"
 #include "Server.h"
 #include <iostream>
+#include <cstdlib>
 #include <mutex>
 #include "state.h"
 
 #define N 4 //柜台数
 #define T 1000 //时钟周期
-
+#define random(x) (rand()%x)
 
 int now;
 
@@ -15,6 +16,9 @@ void Clock() {
 	while (true) {
 		Sleep(1000);
 		Time++;
+		if (Time % 30 == 0) {
+			std::cout << Time << std::endl;
+		}
 	}
 }
 
@@ -30,6 +34,7 @@ void start()
 		int i;
 		for (i = 0; i < now; i++)
 		{
+			if ((*(customers + i))->Entered()) {
 				//got_num表示顾客是否抽到号
 				if (!(*(customers + i))->got_num)//若时间到且该顾客未取号则加入取号线程
 				{
@@ -37,6 +42,7 @@ void start()
 					*(custom_thread + i) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Get_num, *(customers + i), 0, custom_threadID + i);
 					(*(customers + i))->got_num = true;
 				}
+			}
 		}
 	}
 }
@@ -44,13 +50,22 @@ void start()
 HANDLE hMutex = CreateMutex(NULL, FALSE, NULL);
 
 void CustomerComing() {
-	int i = 0;
+	int i = 1;
 	int n = 0;
-	while (NUM_CUSTOM - NUM_DONE < 30) {
-		//WaitForSingleObject(hMutex, INFINITE);
-		customers_queue.push(Customer(i++, Time+(n++), 3));
-		NUM_CUSTOM++;
-		//ReleaseMutex(hMutex);
+	int t = Time;
+	int d;
+	while (1) {
+		while (NUM_CUSTOM - NUM_DONE < 30) {
+			//WaitForSingleObject(hMutex, INFINITE);
+			srand(n++);
+			t = t + random(10) + 1;
+			srand(t);
+			d = random(10);
+			customers_queue.push(Customer(i, t, d));
+			i++;
+			NUM_CUSTOM++;
+			//ReleaseMutex(hMutex);
+		}
 	}
 }
 
@@ -64,9 +79,6 @@ int main() {
 
 
 
-	HANDLE Come_thread;
-	DWORD Come_threadID;
-	Come_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CustomerComing, NULL, 0, &Come_threadID);//开始时钟函数
 																								  //柜台线程数组
 	HANDLE server_thread[N];
 	DWORD server_threadID[N];
@@ -82,6 +94,29 @@ int main() {
 		server_thread[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Call_num, *(servers + i), 0, &server_threadID[i]);
 	}
 
+	HANDLE *custom_thread;
+	DWORD *custom_threadID;
+	Customer* a;
+
+	HANDLE Come_thread;
+	DWORD Come_threadID;
+	Come_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CustomerComing, NULL, 0, &Come_threadID);//开始时钟函数
+
+	while (1) {
+		while (!customers_queue.empty()) {
+			custom_thread = new HANDLE;
+			custom_threadID = new DWORD;
+			a = &customers_queue.front();
+			
+			if (a&&a->Entered()) {
+				*custom_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Get_num, a, 0, custom_threadID);
+				a->got_num = true;
+				customers_queue.pop();
+			}
+		}
+	}
+
+/*
 	while (1) {
 		while (NUM_CUSTOM - NUM_DONE == 0);
 		now = NUM_CUSTOM - NUM_DONE;
@@ -97,6 +132,7 @@ int main() {
 		//ReleaseMutex(hMutex);
 		start();//开始进入顾客
 	}
+	*/
 	system("pause");
 	return 0;
 }
